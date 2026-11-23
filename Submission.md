@@ -2,7 +2,7 @@
 
 **Candidate:** Pranav Gupta  
 **Live app (dashboard + API docs):** `(https://drive.google.com/file/d/1bGlV3GxAdh_S3XruOuYsolKeQjw5Hlof/view?usp=drive_link)`  
-**Source code:** `https://github.com/pranavg009/member-reminder-engine`
+**Source code:** `(https://github.com/pranavg009/member-reminder-engine)`
 
 An SLA-driven WhatsApp reminder service. It reads the partner SLA, decides when each member must be reminded,
 drafts a personalised message with an LLM (Groq), sends it through WhatsApp (Twilio), logs every step, tracks delivery,
