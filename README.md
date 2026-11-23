@@ -14,8 +14,6 @@ extra deployment. It shows the partner SLA, a member registration form, a WhatsA
 that jumps a virtual clock so the whole reminder → follow-up → escalation flow can be demoed in seconds.
 Swagger docs stay available at `/docs`.
 
-> **Submitting? Read [SUBMISSION.md](SUBMISSION.md)**: requirement coverage, the Twilio free-trial limitation, live-vs-simulated status.
-
 ## Requirement → where it lives
 
 | Assessment requirement | Implementation | Proof |
