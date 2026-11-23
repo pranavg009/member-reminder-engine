@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Member Reminder Engine</title>
+<style>
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#14181f; --muted:#667085; --line:#e4e7ec; --soft:#f9fafb;
+  --brand:#0f766e; --brand-ink:#ffffff; --out:#d9fdd3; --in:#ffffff; --chat:#efeae2;
+  --ok:#067647; --ok-bg:#ecfdf3; --warn:#b54708; --warn-bg:#fffaeb;
+  --bad:#b42318; --bad-bg:#fef3f2; --info:#175cd3; --info-bg:#eff8ff; --mute-bg:#f2f4f7;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1116; --panel:#161b22; --ink:#e6edf3; --muted:#8b949e; --line:#2a313c; --soft:#1b222b;
+    --brand:#2dd4bf; --brand-ink:#04211f; --out:#144d37; --in:#1f2630; --chat:#0b141a;
+    --ok:#5fd68a; --ok-bg:#0f2a1d; --warn:#f2b45c; --warn-bg:#2b2110; --bad:#ff8a80; --bad-bg:#2d1513;
+    --info:#7cb2ff; --info-bg:#11233d; --mute-bg:#232a33; --shadow:none; }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3,p{margin:0}
+.top{max-width:1280px;margin:0 auto;padding:18px 16px 4px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:40px;height:40px;border-radius:11px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-size:20px}
+.brand h1{font-size:18px;letter-spacing:-.01em}
+.brand p{color:var(--muted);font-size:12.5px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+.chip b{color:var(--ink);font-weight:600}
+.chip.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}.chip.ok b{color:var(--ok)}
+.chip.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}.chip.warn b{color:var(--warn)}
+.layout{max-width:1280px;margin:0 auto;padding:12px 16px 40px;display:grid;grid-template-columns:350px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.sla{display:grid;gap:8px}
+.sla div{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.sla i{font-style:normal;width:22px;text-align:center}
+.sla span{color:var(--muted)}
+form{display:grid;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--ink);font:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:-1px;background:var(--panel)}
+.hint{font-size:11.5px;color:var(--muted)}
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:transparent}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.small{padding:5px 9px;font-size:12px;font-weight:600}
+.btn:disabled{opacity:.55;cursor:wait}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.members{display:grid;gap:8px}
+.member{border:1px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;background:var(--panel)}
+.member:hover{background:var(--soft)}
+.member.sel{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset}
+.member .n{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:600}
+.member .s{color:var(--muted);font-size:12px;margin-top:2px}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.muted{background:var(--mute-bg);color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:13px}
+.clock{display:grid;gap:10px}
+.clockrow{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.clockrow label{flex:1;min-width:200px}
+.result{font-size:12.5px;color:var(--muted);background:var(--soft);border-radius:9px;padding:8px 10px;min-height:34px}
+.thead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.thead h3{font-size:16px}
+.thead p{color:var(--muted);font-size:12.5px}
+.thread{background:var(--chat);border-radius:12px;padding:14px;height:470px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.day{align-self:center;font-size:11px;color:var(--muted);background:var(--panel);padding:2px 10px;border-radius:999px;margin:4px 0}
+.msg{max-width:min(520px,82%);padding:8px 10px 6px;border-radius:10px;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.msg.out{align-self:flex-end;background:var(--out);border-top-right-radius:3px}
+.msg.in{align-self:flex-start;background:var(--in);border-top-left-radius:3px}
+.msg .who{font-size:11px;font-weight:700;color:var(--brand);margin-bottom:2px}
+.msg .txt{white-space:pre-wrap;word-wrap:break-word}
+.msg .meta{font-size:11px;color:var(--muted);text-align:right;margin-top:3px}
+.blue{color:#34b7f1}
+.tag{font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--mute-bg);color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.note{align-self:center;max-width:92%;text-align:center;font-size:12px;padding:5px 12px;border-radius:9px;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.note.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent;font-weight:600}
+.note.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.note.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.composer{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.composer input{flex:1;min-width:160px}
+.esc{display:grid;gap:8px}
+.escitem{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:11px}
+.escitem .id{font-weight:700;color:var(--bad)}
+.escitem.done .id{color:var(--ok)}
+.escitem small{color:var(--muted);display:block}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#101828;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:9}
+.toast.show{opacity:1}.toast.err{background:#b42318}
+.live{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+.live input{width:auto}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">&#9993;</div>
+    <div>
+      <h1>Member Reminder Engine</h1>
+      <p>SLA-driven WhatsApp reminders &middot; LLM-drafted &middot; automatic escalation</p>
+    </div>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card">
+      <h2>Partner SLA</h2>
+      <div class="sla" id="sla"><span>Loading&hellip;</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Register member</h2>
+      <form id="regForm" autocomplete="off">
+        <div class="row2">
+          <label>Member ID<input name="member_id" value="MBR-10042" required></label>
+          <label>First name<input name="first_name" value="Aarav" required></label>
+        </div>
+        <label>WhatsApp number (E.164)<input name="phone" value="+919876543210" required placeholder="+91XXXXXXXXXX">
+          <span class="hint" id="phoneHint"></span></label>
+        <div class="row2">
+          <label>Timezone<input name="timezone" value="Asia/Kolkata" required></label>
+          <label>Event date &amp; time<input type="datetime-local" name="event_at" value="2026-11-25T08:30" required></label>
+        </div>
+        <label>Event title<input name="title" value="Annual health check-up" required></label>
+        <label>Location<input name="location" value="Acme Wellness Clinic, Koramangala, Bengaluru"></label>
+        <label>Notes for the member<input name="notes" value="Please arrive fasting for 8 hours."></label>
+        <button class="btn primary" type="submit">Register &amp; compute schedule</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Members <span class="live"><input type="checkbox" id="auto" checked> auto-refresh</span></h2>
+      <div class="members" id="members"><div class="empty">No members yet. Register one above.</div></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card clock">
+      <h2>Time machine <span class="live" id="clockState">real time</span></h2>
+      <p class="hint">Jump the virtual clock (IST) and run the SLA cycle. This shows the whole 8-hour flow of reminder, follow-up and escalation in seconds.</p>
+      <div class="clockrow">
+        <label>Virtual time (IST)<input type="datetime-local" id="vclock"></label>
+        <button class="btn" id="jumpFirst" type="button">First reminder</button>
+        <button class="btn" id="jumpFinal" type="button">Final reminder</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn small" data-add="30" type="button">+30 min</button>
+        <button class="btn small" data-add="240" type="button">+4 h</button>
+        <button class="btn small" data-add="1440" type="button">+1 day</button>
+        <button class="btn small" id="realtime" type="button">Use real time</button>
+        <span style="flex:1"></span>
+        <button class="btn primary" id="runBtn" type="button">&#9654; Run cycle</button>
+      </div>
+      <div class="result" id="runResult">Nothing run yet.</div>
+    </section>
+
+    <section class="card">
+      <div class="thead">
+        <div>
+          <h3 id="tName">Conversation</h3>
+          <p id="tSub">Select or register a member to see the conversation, delivery status and audit trail.</p>
+        </div>
+        <span id="tPill"></span>
+      </div>
+      <div class="thread" id="thread"><div class="empty" style="margin:auto">No conversation yet.</div></div>
+      <div class="composer">
+        <span class="hint">Simulate member reply:</span>
+        <button class="btn small" data-reply="YES" type="button">YES</button>
+        <button class="btn small" data-reply="RESCHEDULE" type="button">RESCHEDULE</button>
+        <button class="btn small" data-reply="STOP" type="button">STOP</button>
+        <input id="replyText" placeholder="or type a reply&hellip;">
+        <button class="btn small" id="sendReply" type="button">Send</button>
+        <button class="btn small" id="markDelivered" type="button" hidden>Mark delivered &#10003;&#10003;</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Escalations &mdash; human tasks</h2>
+      <div class="esc" id="esc"><div class="empty">No escalations. Silence past the SLA, a failed delivery, or a reschedule request will appear here.</div></div>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () { /* default appointment = 4 days from today, 08:30, so the form is never stale */
+  const d = new Date(Date.now() + 4 * 864e5), p = n => String(n).padStart(2, "0");
+  const el = document.querySelector('[name="event_at"]');
+  if (el) el.value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T08:30`;
+})();
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const state = { config: null, members: [], selected: null, timeline: null, escalations: [], busy: false };
+
+// ---------------------------------------------------------------- helpers
+async function api(path, opts = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+  if (!res.ok) {
+    let msg = res.statusText;
+    try {
+      const j = await res.json();
+      msg = typeof j.detail === "string" ? j.detail
+        : Array.isArray(j.detail) ? j.detail.map(d => `${(d.loc || []).slice(1).join(".")}: ${d.msg}`).join("; ") : msg;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+let toastTimer;
+function toast(msg, isErr = false) {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "toast show" + (isErr ? " err" : "");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.className = "toast"), isErr ? 5200 : 2600);
+}
+async function act(fn) {
+  if (state.busy) return;
+  state.busy = true; document.querySelectorAll("button").forEach(b => (b.disabled = true));
+  try { await fn(); } catch (e) { toast(e.message || String(e), true); }
+  finally { state.busy = false; document.querySelectorAll("button").forEach(b => (b.disabled = false)); }
+}
+const tzOf = () => (selectedMember() || {}).timezone || "Asia/Kolkata";
+const fmt = (iso, tz) => new Intl.DateTimeFormat("en-IN", { timeZone: tz, day: "2-digit", month: "short", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso));
+const fmtTime = (iso, tz) => new Intl.DateTimeFormat("en-IN", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso));
+const fmtDay = (iso, tz) => new Intl.DateTimeFormat("en-IN", { timeZone: tz, weekday: "short", day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso));
+const fmtLong = (iso, tz) => new Intl.DateTimeFormat("en-IN", { timeZone: tz, weekday: "short", day: "2-digit", month: "short", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso));
+const toISTInput = iso => new Date(new Date(iso).getTime() + 5.5 * 3600e3).toISOString().slice(0, 16);
+const fromISTInput = v => new Date(v + ":00+05:30").toISOString();
+const selectedMember = () => state.members.find(m => m.member_id === state.selected);
+const stageLabel = s => s === "first_reminder" ? "First reminder" : s === "final_reminder" ? "Final reminder"
+  : (s || "").startsWith("followup_") ? "Follow-up " + s.split("_")[1] : (s || "").replace(/_/g, " ");
+const REASON = { no_response_within_sla: "No response within the SLA", delivery_failed: "WhatsApp delivery failed",
+  member_requested_reschedule: "Member asked to reschedule" };
+const STATE = { awaiting_response: ["Awaiting reply", "warn"], responded: ["Replied", "ok"], escalated: ["Escalated", "bad"],
+  informational: ["Confirmed", "info"], followed_up: ["Follow-up sent", "warn"], send_failed: ["Send failed", "bad"],
+  cancelled: ["Cancelled", "muted"], sending: ["Sending", "info"] };
+function pillFor(m) {
+  if (!m) return "";
+  if (m.opted_out) return `<span class="pill muted">Opted out</span>`;
+  if (!m.whatsapp_opt_in) return `<span class="pill muted">No consent</span>`;
+  const [label, kind] = STATE[m.latest_state] || ["Scheduled", "info"];
+  return `<span class="pill ${kind}">${label}</span>`;
+}
+const virtualISO = () => { const v = $("#vclock").value; return v ? fromISTInput(v) : null; };
+
+// ---------------------------------------------------------------- rendering
+function renderConfig() {
+  const c = state.config; if (!c) return;
+  const real = c.whatsapp_provider === "twilio";
+  const llm = c.llm_provider === "fallback" ? "Template fallback" : c.llm_provider[0].toUpperCase() + c.llm_provider.slice(1);
+  $("#chips").innerHTML =
+    `<span class="chip ${real ? "ok" : "warn"}">WhatsApp: <b>${real ? "Twilio (live)" : "simulated"}</b></span>` +
+    `<span class="chip ${c.llm_provider === "fallback" ? "warn" : "ok"}">LLM: <b>${esc(llm)}</b></span>`;
+  $("#markDelivered").hidden = real;
+  $("#phoneHint").textContent = real ? "With the Twilio sandbox, this phone must have joined the sandbox first." : "";
+  const s = c.sla; if (!s) { $("#sla").innerHTML = "<span>No SLA loaded.</span>"; return; }
+  const stages = s.reminder_schedule.map(x => `${x.hours_before_event}h`).join(" and ");
+  $("#sla").innerHTML =
+    `<div><i>&#128197;</i><p><b>${esc(s.partner_name)}</b><br><span>Remind ${esc(stages)} before the event</span></p></div>` +
+    `<div><i>&#128340;</i><p><b>${esc(s.send_window.start.slice(0, 5))}&ndash;${esc(s.send_window.end.slice(0, 5))}</b> <span>member-local send window</span></p></div>` +
+    `<div><i>&#9201;</i><p><b>${s.response_sla.response_window_hours}h</b> <span>to reply &middot; ${s.response_sla.max_followups} follow-up</span></p></div>` +
+    `<div><i>&#128680;</i><p><span>Then escalate:</span> <b>${esc(s.escalation.actions.join(", ").replace(/_/g, " "))}</b></p></div>`;
+}
+
+function renderMembers() {
+  const el = $("#members");
+  if (!state.members.length) { el.innerHTML = `<div class="empty">No members yet. Register one above.</div>`; return; }
+  el.innerHTML = state.members.map(m => `
+    <div class="member ${m.member_id === state.selected ? "sel" : ""}" data-id="${esc(m.member_id)}">
+      <div class="n"><span>${esc(m.first_name)} <small style="color:var(--muted);font-weight:500">${esc(m.member_id)}</small></span>${pillFor(m)}</div>
+      <div class="s">${esc(m.event_title)} &middot; ${esc(fmtLong(m.event_at, m.timezone))}</div>
+    </div>`).join("");
+  el.querySelectorAll(".member").forEach(n => n.addEventListener("click", () => { state.selected = n.dataset.id; refresh(); }));
+}
+
+function tick(st) {
+  return ({ queued: "&#128339;", sent: "&#10003;", delivered: "&#10003;&#10003;", read: '<span class="blue">&#10003;&#10003;</span>',
+    failed: "&#9888;", undelivered: "&#9888;" })[st] || "&#128339;";
+}
+
+function renderThread() {
+  const m = selectedMember(), t = state.timeline;
+  if (!m || !t) {
+    $("#tName").textContent = "Conversation"; $("#tPill").innerHTML = "";
+    $("#tSub").textContent = "Select or register a member to see the conversation, delivery status and audit trail.";
+    $("#thread").innerHTML = `<div class="empty" style="margin:auto">No conversation yet.</div>`; return;
+  }
+  const tz = m.timezone;
+  $("#tName").textContent = `${m.first_name} ${m.last_name || ""}`.trim() + ` \u00b7 ${m.phone_masked}`;
+  $("#tSub").textContent = `${m.event_title} \u2014 ${fmtLong(m.event_at, tz)} (${tz})`;
+  $("#tPill").innerHTML = pillFor(m);
+  const byId = Object.fromEntries(t.reminders.map(r => [r.reminder_id, r]));
+  let html = "", lastDay = "";
+  for (const e of t.events) {
+    const day = fmtDay(e.ts, tz);
+    if (day !== lastDay) { html += `<div class="day">${esc(day)}</div>`; lastDay = day; }
+    const d = e.detail || {}, time = fmtTime(e.ts, tz);
+    switch (e.type) {
+      case "member_registered":
+        html += `<div class="note">Member registered &middot; ${(d.schedule || []).length} reminder stages planned</div>`; break;
+      case "reminder_skipped":
+        html += `<div class="note">Skipped ${esc(stageLabel(d.stage))} (${esc(String(e.status).replace(/_/g, " "))})</div>`; break;
+      case "reminder_generated": {
+        const llm = e.status === "llm";
+        const why = (d.validation_errors || []).length ? ` &middot; ${esc(d.validation_errors.join(", "))}` : "";
+        html += `<div class="note ${llm ? "ok" : "warn"}">${llm ? "&#10024; Drafted by " + esc(d.model || "LLM") : "Template fallback used"}${why}</div>`; break;
+      }
+      case "message_sent": {
+        const r = byId[e.reminder_id] || {};
+        html += `<div class="msg out"><div class="who">${esc(stageLabel(d.stage))}${d.ai_text_delivered === false ? " &middot; AI draft (trial template was sent instead)" : ""}</div><div class="txt">${esc(e.message)}</div>` +
+          `<div class="meta">${esc(time)} ${tick(r.delivery_status || e.status)}</div></div>`; break;
+      }
+      case "delivered_content":
+        html += `<div class="note ok">&#9993; Provider confirms the member actually received: &ldquo;${esc(e.message)}&rdquo;</div>`; break;
+      case "send_failed":
+        html += `<div class="note bad">Could not send ${esc(stageLabel(d.stage))}: ${esc(d.error)}</div>`; break;
+      case "member_response": {
+        const sim = d.message_sid === "SIMULATED" ? " &middot; simulated" : "";
+        html += `<div class="msg in"><div class="txt">${esc(e.response)}</div><div class="meta">${esc(time)} &middot; <span class="tag">${esc(e.status)}</span>${sim}</div></div>`; break;
+      }
+      case "member_opted_out":
+        html += `<div class="note">Member opted out &mdash; no further messages will be sent</div>`; break;
+      case "escalation_triggered": {
+        const acts = (d.actions || []).map(a => `${a.action.replace(/_/g, " ")}: ${a.status}`).join(" \u00b7 ");
+        html += `<div class="note bad">&#128680; Escalated to care team &mdash; ${esc(REASON[e.status] || e.status)}<br><small>${esc(acts)}</small></div>`; break;
+      }
+      case "escalation_deduplicated":
+        html += `<div class="note">Escalation already open for this member &mdash; no duplicate task created</div>`; break;
+    }
+  }
+  const box = $("#thread"), stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+  box.innerHTML = html || `<div class="empty" style="margin:auto">Registered. Run the cycle to send the first reminder.</div>`;
+  if (stick || !box.dataset.once) { box.scrollTop = box.scrollHeight; box.dataset.once = "1"; }
+}
+
+function renderEscalations() {
+  const el = $("#esc"), list = state.escalations;
+  if (!list.length) { el.innerHTML = `<div class="empty">No escalations. Silence past the SLA, a failed delivery, or a reschedule request will appear here.</div>`; return; }
+  el.innerHTML = list.slice().reverse().map(e => {
+    const m = state.members.find(x => x.member_id === e.member_id), tz = m ? m.timezone : "Asia/Kolkata";
+    return `<div class="escitem ${e.resolved ? "done" : ""}"><span class="id">#${e.escalation_id}</span>` +
+      `<div><b>${esc(e.member_id)}</b> &mdash; ${esc(REASON[e.reason] || e.reason)}<small>${esc(e.actions.join(", ").replace(/_/g, " "))} &middot; ${esc(fmt(e.created_at, tz))}</small></div>` +
+      `<span class="pill ${e.resolved ? "ok" : "bad"}">${e.resolved ? "Resolved" : "Open"}</span></div>`;
+  }).join("");
+}
+
+// ---------------------------------------------------------------- data
+async function refresh() {
+  const [config, members, escalations] = await Promise.all([
+    state.config ? Promise.resolve(state.config) : api("/config"), api("/members"), api("/escalations")]);
+  state.config = config; state.members = members; state.escalations = escalations;
+  if (!state.selected && members.length) state.selected = members[0].member_id;
+  if (state.selected && !members.some(m => m.member_id === state.selected)) state.selected = members.length ? members[0].member_id : null;
+  state.timeline = state.selected ? await api(`/members/${encodeURIComponent(state.selected)}/timeline`) : null;
+  renderConfig(); renderMembers(); renderThread(); renderEscalations();
+  $("#clockState").textContent = $("#vclock").value ? "virtual clock active" : "real time";
+}
+
+// ---------------------------------------------------------------- actions
+$("#regForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  act(async () => {
+    const f = Object.fromEntries(new FormData(ev.target).entries());
+    const body = {
+      member_id: f.member_id.trim(), first_name: f.first_name.trim(), phone: f.phone.trim(), timezone: f.timezone.trim(),
+      language: "en", partner_id: state.config.sla.partner_id, whatsapp_opt_in: true,
+      reminder: { kind: "appointment", title: f.title.trim(), event_at: f.event_at + ":00", location: f.location.trim() || null, notes: f.notes.trim() || null }
+    };
+    const r = await api("/members", { method: "POST", body: JSON.stringify(body) });
+    state.selected = body.member_id;
+    const first = r.schedule[0];
+    toast(`Registered. First reminder will go out ${first.send_at_local}`);
+    if (!$("#vclock").value) $("#vclock").value = toISTInput(first.send_at);
+    await refresh();
+  });
+});
+
+function jumpTo(stageIdx) {
+  const m = selectedMember(); if (!m || !m.schedule[stageIdx]) return toast("Register or select a member first", true);
+  $("#vclock").value = toISTInput(m.schedule[stageIdx].send_at); refresh();
+}
+$("#jumpFirst").addEventListener("click", () => jumpTo(0));
+$("#jumpFinal").addEventListener("click", () => jumpTo(1));
+document.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", () => {
+  const base = $("#vclock").value ? new Date($("#vclock").value + ":00+05:30") : new Date();
+  $("#vclock").value = toISTInput(new Date(base.getTime() + Number(b.dataset.add) * 60000).toISOString());
+  $("#clockState").textContent = "virtual clock active";
+}));
+$("#realtime").addEventListener("click", () => { $("#vclock").value = ""; $("#clockState").textContent = "real time"; toast("Using the real clock"); });
+$("#runBtn").addEventListener("click", () => act(async () => {
+  const v = virtualISO();
+  const r = await api("/run" + (v ? "?now=" + encodeURIComponent(v) : ""), { method: "POST" });
+  const parts = [["Sent", r.sent], ["Follow-ups", r.followups], ["Escalations", r.escalations], ["Skipped", r.skipped], ["Deferred (quiet hours)", r.deferred]]
+    .filter(([, a]) => a.length).map(([k, a]) => `${k}: ${a.join(", ")}`);
+  $("#runResult").textContent = (v ? "Ran at virtual time. " : "Ran at real time. ") + (parts.length ? parts.join(" \u00b7 ") : "Nothing was due.");
+  await refresh();
+}));
+
+function simulateReply(text) {
+  if (!state.selected) return toast("Select a member first", true);
+  if (!text.trim()) return;
+  act(async () => {
+    const r = await api("/simulate/reply", { method: "POST", body: JSON.stringify({ member_id: state.selected, body: text, now: virtualISO() }) });
+    toast(`Auto-reply: ${r.reply}`); $("#replyText").value = ""; await refresh();
+  });
+}
+document.querySelectorAll("[data-reply]").forEach(b => b.addEventListener("click", () => simulateReply(b.dataset.reply)));
+$("#sendReply").addEventListener("click", () => simulateReply($("#replyText").value));
+$("#replyText").addEventListener("keydown", e => { if (e.key === "Enter") simulateReply(e.target.value); });
+$("#markDelivered").addEventListener("click", () => act(async () => {
+  if (!state.selected) throw new Error("Select a member first");
+  await api("/simulate/delivery", { method: "POST", body: JSON.stringify({ member_id: state.selected, status: "delivered", now: virtualISO() }) });
+  await refresh();
+}));
+
+setInterval(() => { if ($("#auto").checked && !state.busy) refresh().catch(() => {}); }, 5000);
+refresh().catch(e => toast(e.message, true));
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Partner Service Level Agreement - the single source of truth for WHEN we remind,
+# HOW LONG we wait for a reply, and WHAT happens when the member stays silent.
+partner_id: acme-health
+partner_name: Acme Health Partners
+
+reminder_schedule:            # hours before the event; engine sorts + validates these
+  - stage: first_reminder
+    hours_before_event: 72
+  - stage: final_reminder
+    hours_before_event: 24
+
+send_window:                  # member-local time; reminders never go out outside this window
+  start: "09:00"
+  end: "20:00"
+
+response_sla:
+  response_window_hours: 4    # how long the member has to reply to each message
+  max_followups: 1            # polite nudges before a human gets involved
+
+escalation:
+  on_delivery_failure: true   # undeliverable message => escalate immediately
+  contact: care-coordination@acme-health.example
+  actions:
+    - notify_care_coordinator
+    - create_call_task

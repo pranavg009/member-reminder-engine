@@ -1,0 +1,17 @@
+{
+  "member_id": "MBR-10042",
+  "first_name": "Aarav",
+  "last_name": "Sharma",
+  "phone": "+919876543210",
+  "timezone": "Asia/Kolkata",
+  "language": "en",
+  "partner_id": "acme-health",
+  "whatsapp_opt_in": true,
+  "reminder": {
+    "kind": "appointment",
+    "title": "Annual health check-up",
+    "event_at": "2026-11-25T08:30:00",
+    "location": "Acme Wellness Clinic, Koramangala, Bengaluru",
+    "notes": "Please arrive fasting for 8 hours."
+  }
+}
